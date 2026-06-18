@@ -26,10 +26,8 @@ public class LogoScript : MonoBehaviour
 
     private IEnumerator PlayStartThenIdle()
     {
-        // Wait for the start animation to complete
         yield return new WaitForSeconds(GetAnimationLength("LogoStart"));
-        
-        // Transition to idle animation
+
         animator.SetTrigger("IdleAnimation");
     }
 
