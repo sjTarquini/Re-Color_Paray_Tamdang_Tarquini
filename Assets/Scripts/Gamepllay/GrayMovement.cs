@@ -66,6 +66,11 @@ public class GrayMovement : MonoBehaviour
 
     void Update()
     {
+        if (!PlayerManager.Instance.IsAlive)
+        {
+            return;
+        }
+        
         HandleInput();
         UpdateAnimation();
     }

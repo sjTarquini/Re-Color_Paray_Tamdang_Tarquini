@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Key
   - RedMoveable
+  - BlackBlock
   layers:
   - Default
   - TransparentFX
