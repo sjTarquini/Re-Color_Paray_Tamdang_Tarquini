@@ -9,7 +9,7 @@ public class BlackBlockInstakill : MonoBehaviour
         {
             if (GameManager.Instance != null)
             {
-                AudioManager.Instance.PlaySound(AudioManager.Instance.deathInstakillSound);
+                InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.deathInstakillSound);
                 GameManager.Instance.KillAndRespawnPlayer(resetProgress: false);
             }
             else

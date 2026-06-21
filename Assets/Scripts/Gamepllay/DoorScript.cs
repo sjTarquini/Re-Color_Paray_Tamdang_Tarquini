@@ -42,7 +42,7 @@ public class DoorScript : MonoBehaviour
         if (lockAnimator != null)
         {
             InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.levelCompleteSound);
-            AudioManager.Instance.StopMusic();
+            MusicManager.Instance.StopMusic();
             lockAnimator.Play(lockStateName);
             yield return null;
             var lockStateInfo = lockAnimator.GetCurrentAnimatorStateInfo(0);

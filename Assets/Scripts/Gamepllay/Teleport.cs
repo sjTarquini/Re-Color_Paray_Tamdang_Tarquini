@@ -39,7 +39,7 @@ public class ItemManager : MonoBehaviour
         if (currentMode != Mode.Spawner || isSpawning) return;
         
         isSpawning = true;
-        InvokeRepeating(nameof(SpawnItem), 0f, spawnDelay);
+        InvokeRepeating(nameof(SpawnItem), 2f, spawnDelay);
     }
 
     private void SpawnItem()

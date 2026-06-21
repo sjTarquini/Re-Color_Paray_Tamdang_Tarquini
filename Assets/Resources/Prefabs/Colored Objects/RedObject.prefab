@@ -173,8 +173,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockingLayers:
     serializedVersion: 2
-    m_Bits: 72
+    m_Bits: 200
   collisionBuffer: 0.05
+  maxDragSpeed: 8
   wayPoints:
   - {fileID: 0}
   - {fileID: 0}
