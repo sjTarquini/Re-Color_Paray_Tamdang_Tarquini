@@ -1238,7 +1238,7 @@ MonoBehaviour:
   crayonCollectSound: {fileID: 8300000, guid: a08df658bea1a4145a19134e7e32dfc6, type: 3}
   deathInstakillSound: {fileID: 8300000, guid: a78bf4f3d6927b24d9e81f1ab5b2a3f1, type: 3}
   deathBorderSound: {fileID: 8300000, guid: 4b00cba84db81bd469309fdb405a7629, type: 3}
-  levelCompleteSound: {fileID: 0}
+  levelCompleteSound: {fileID: 8300000, guid: f1c5b9d4649bb984fb646b17eb9bcee2, type: 3}
   yellowBlueCombineSound: {fileID: 8300000, guid: de910cb3cb858a0498063f3b07524ca9, type: 3}
 --- !u!4 &406736047
 Transform:

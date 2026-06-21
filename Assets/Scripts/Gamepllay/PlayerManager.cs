@@ -36,7 +36,6 @@ public class PlayerManager : MonoBehaviour
 
     public void CollectCrayon()
     {
-        AudioManager.Instance.PlaySound(AudioManager.Instance.crayonCollectSound);
         if (hasCrayon) return;
         hasCrayon = true;
     }

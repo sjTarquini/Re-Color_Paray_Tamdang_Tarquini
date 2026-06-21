@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class AudioManager : MonoBehaviour
+public class InGameAudioManager : MonoBehaviour
 {
-    public static AudioManager Instance { get; private set; }
+    public static InGameAudioManager Instance { get; private set; }
 
     [Header("Player Sounds")]
     public AudioClip jumpSound;

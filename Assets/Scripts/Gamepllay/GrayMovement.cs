@@ -156,11 +156,11 @@ public class GrayMovement : MonoBehaviour
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         jumpCount = Mathf.Max(0, jumpCount - 1);
-        AudioManager.Instance.PlaySound(AudioManager.Instance.jumpSound);
+        InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.jumpSound);
 
         if (isSecondJump)
             StartCartwheel();
-            AudioManager.Instance.PlaySound(AudioManager.Instance.jumpSound);
+            InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.jumpSound);
     }
 
 

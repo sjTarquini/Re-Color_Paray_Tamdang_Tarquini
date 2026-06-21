@@ -25,8 +25,8 @@ public class BlueObjectTrigger : MonoBehaviour
         SpriteRenderer spriteRenderer = transform.parent.GetComponent<SpriteRenderer>();
         
         // === PLAY COMBINE SOUND ===
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlaySound(AudioManager.Instance.yellowBlueCombineSound);
+        if (InGameAudioManager.Instance != null)
+            InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.yellowBlueCombineSound);
         else if (GetComponent<AudioSource>() != null)
             GetComponent<AudioSource>().Play();
 

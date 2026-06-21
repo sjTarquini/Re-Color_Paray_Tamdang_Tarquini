@@ -15,6 +15,7 @@ public class keyScript : MonoBehaviour
         {
             if (PlayerManager.Instance != null)
             {
+                InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.crayonCollectSound);
                 PlayerManager.Instance.CollectKey();
                 Destroy(gameObject);
             }

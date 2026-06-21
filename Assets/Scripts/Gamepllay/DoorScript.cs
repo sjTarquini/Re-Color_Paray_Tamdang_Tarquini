@@ -41,6 +41,8 @@ public class DoorScript : MonoBehaviour
 
         if (lockAnimator != null)
         {
+            InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.levelCompleteSound);
+            AudioManager.Instance.StopMusic();
             lockAnimator.Play(lockStateName);
             yield return null;
             var lockStateInfo = lockAnimator.GetCurrentAnimatorStateInfo(0);
@@ -54,9 +56,6 @@ public class DoorScript : MonoBehaviour
             var doorStateInfo = doorAnimator.GetCurrentAnimatorStateInfo(0);
             yield return new WaitForSeconds(doorStateInfo.length);
         }
-
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlaySound(AudioManager.Instance.levelCompleteSound);
 
         TeleportToNextLevel();
     }
