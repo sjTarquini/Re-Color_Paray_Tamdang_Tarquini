@@ -16,6 +16,7 @@ public class OptionsManager : MonoBehaviour
     [SerializeField] private Button[] masterButtons;
     [SerializeField] private Button[] bgmButtons;
     [SerializeField] private Button[] sfxButtons;
+    [SerializeField] private Button reenableTutorialButtons;
 
     private Color activeColor = Color.red;
     private Color[] masterOriginalColors;
@@ -33,6 +34,15 @@ public class OptionsManager : MonoBehaviour
         masterOriginalColors = CacheOriginalColors(masterButtons);
         bgmOriginalColors = CacheOriginalColors(bgmButtons);
         sfxOriginalColors = CacheOriginalColors(sfxButtons);
+    }
+
+    void Update()
+    {
+        bool levelSelectorExists = LevelSelector.Instance != null;
+
+        // Toggle interactability
+        if (reenableTutorialButtons != null)
+            reenableTutorialButtons.interactable = levelSelectorExists;
     }
 
     private void Start()
@@ -117,21 +127,14 @@ public class OptionsManager : MonoBehaviour
         }
     }
 
-    public void OnReenableTutorialPopup()
+    public void OnReenableAllTutorials()
     {
-        if (LevelSelector.Instance != null)
-        {
-            LevelSelector.Instance.ReenableTutorialPopup();
-        }
+        PlayerPrefs.SetInt("ShowTutorialPopup", 1);
+        PlayerPrefs.SetInt("ShowSecondTutorialPopup", 1);
+        PlayerPrefs.Save();
+        Debug.Log("Both tutorial popups reenabled.");
     }
 
-    public void OnReenableSecondTutorialPopup()
-    {
-        if (LevelSelector.Instance != null)
-        {
-            LevelSelector.Instance.ReenableSecondTutorialPopup();
-        }
-    }
 
 
     public void UnlockStagesFromOptions()

@@ -57,6 +57,7 @@ public class LevelSelector : MonoBehaviour
         if (lastDifficulty == "Medium") SwitchToGroup(mediumGroup);
         else if (lastDifficulty == "Hard") SwitchToGroup(hardGroup);
         else SwitchToGroup(easyGroup);
+
     }
 
     private void Start()
