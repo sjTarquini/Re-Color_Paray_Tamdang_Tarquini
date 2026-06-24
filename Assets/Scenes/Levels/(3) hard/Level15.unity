@@ -1313,11 +1313,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5547023367270258300, guid: 1e26fb6e2be5b4148a5138940fde5c67, type: 3}
       propertyPath: stageNumber
-      value: 14
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 5547023367270258300, guid: 1e26fb6e2be5b4148a5138940fde5c67, type: 3}
       propertyPath: nextSceneName
-      value: level15
+      value: LevelSelection
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
