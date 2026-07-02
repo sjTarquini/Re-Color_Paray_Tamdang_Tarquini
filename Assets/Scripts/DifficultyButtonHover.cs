@@ -57,7 +57,11 @@ public class DifficultyButton : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        DifficultyButtonManager.Instance.SelectButton(this);
+        var multiplayerManager = FindObjectOfType<M_DifficultyButtonManager>();
+        if (multiplayerManager != null)
+            multiplayerManager.SelectButton(this);
+        else if (DifficultyButtonManager.Instance != null)
+            DifficultyButtonManager.Instance.SelectButton(this);
     }
     public void Select()
     {
