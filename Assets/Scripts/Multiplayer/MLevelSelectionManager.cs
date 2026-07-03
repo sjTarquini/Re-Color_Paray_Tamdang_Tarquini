@@ -148,7 +148,17 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         UpdateRoleButtons();
 
         if (PhotonNetwork.InRoom)
-            isPlayerOne = PhotonNetwork.LocalPlayer.ActorNumber == 1;
+        {
+            // Better way to determine "Player 1"
+            isPlayerOne = PhotonNetwork.IsMasterClient || 
+                        PhotonNetwork.LocalPlayer.ActorNumber == 1;
+
+            Debug.Log($"=== LOCAL PLAYER INFO ===\n" +
+                    $"ActorNumber: {PhotonNetwork.LocalPlayer.ActorNumber}\n" +
+                    $"IsMasterClient: {PhotonNetwork.IsMasterClient}\n" +
+                    $"isPlayerOne (our logic): {isPlayerOne}\n" +
+                    $"NickName: {PhotonNetwork.NickName}");
+        }
 
         RefreshStageIndicators();
         UpdateLevelSelectedState();
