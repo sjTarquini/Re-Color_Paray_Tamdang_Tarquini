@@ -2669,6 +2669,7 @@ MonoBehaviour:
   role1IndicatorAnchor: {fileID: 97743770}
   role2IndicatorAnchor: {fileID: 639805467}
   createServerSceneName: CreateServer
+  singlePlayerTestMode: 1
 --- !u!1 &745226623
 GameObject:
   m_ObjectHideFlags: 0

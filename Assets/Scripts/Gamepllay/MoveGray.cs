@@ -1,8 +1,9 @@
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 // Handles keyboard movement/jump for Role1 (Gray character)
-public class MoveGray : MonoBehaviour
+public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
 {
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
@@ -50,12 +51,31 @@ public class MoveGray : MonoBehaviour
 
         if (groundCheckPoint == null)
             groundCheckPoint = transform;
+
+        // Make remote player rigidbody static but keep the script enabled so OnPhotonSerializeView still gets called
+        if (!photonView.IsMine)
+        {
+            rb.bodyType = RigidbodyType2D.Static;
+        }
+
+        Debug.Log($"[MoveGray] Start - PhotonView.IsMine: {photonView.IsMine}, ViewID: {photonView.ViewID}, Owner: {photonView.Owner?.NickName}");
     }
 
     void Update()
     {
-        if (!PlayerManager.Instance.IsAlive)
+        if (photonView == null)
+        {
+            Debug.LogError("[MoveGray] PhotonView is null!");
             return;
+        }
+
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        // if (!PlayerManager.Instance.IsAlive)
+        //     return;
 
         int role = MLevelSelectionManager.GetLocalRoleIndexFromPrefs();
         if (role == 1)
@@ -72,6 +92,9 @@ public class MoveGray : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (!photonView.IsMine)
+            return;
+
         CheckGrounded();
 
         if (isGrounded && !wasGrounded)
@@ -238,5 +261,43 @@ public class MoveGray : MonoBehaviour
 
         spriteRenderer.transform.localEulerAngles = new Vector3(0f, startY, 0f);
         cartwheelCoroutine = null;
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        Debug.Log($"[MoveGray] OnPhotonSerializeView called - IsWriting: {stream.IsWriting}, IsMine: {photonView.IsMine}");
+
+        if (stream.IsWriting)
+        {
+            // Send position, velocity, and animation state to other players
+            stream.SendNext(transform.position);
+            stream.SendNext(rb.velocity);
+            stream.SendNext(isGrounded);
+            stream.SendNext(horizontalInput);
+            stream.SendNext(isRunning);
+            
+            Debug.Log($"[MoveGray] Writing sync data - Pos: {transform.position}, Vel: {rb.velocity}");
+        }
+        else
+        {
+            // Receive position, velocity, and animation state from network
+            Vector3 networkPosition = (Vector3)stream.ReceiveNext();
+            Vector2 networkVelocity = (Vector2)stream.ReceiveNext();
+            bool networkIsGrounded = (bool)stream.ReceiveNext();
+            float networkHorizontalInput = (float)stream.ReceiveNext();
+            bool networkIsRunning = (bool)stream.ReceiveNext();
+
+            // Update remote player
+            if (!photonView.IsMine)
+            {
+                transform.position = networkPosition;
+                rb.velocity = networkVelocity;
+                isGrounded = networkIsGrounded;
+                horizontalInput = networkHorizontalInput;
+                isRunning = networkIsRunning;
+                
+                Debug.Log($"[MoveGray] Reading sync data - Pos: {networkPosition}, Vel: {networkVelocity}");
+            }
+        }
     }
 }

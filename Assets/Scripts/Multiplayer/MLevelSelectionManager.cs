@@ -85,6 +85,10 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     [Tooltip("Scene to load when the local player presses the Leave button (e.g. the lobby/create-server scene).")]
     [SerializeField] private string createServerSceneName = "CreateServer";
 
+    [Header("Testing")]
+    [SerializeField] private bool singlePlayerTestMode = false;
+    [Tooltip("When enabled, bypasses the 2-player requirement for testing with a single player.")]
+
     private Coroutine feedbackHideRoutine;
     private Coroutine roleFeedbackHideRoutine;
 
@@ -146,6 +150,7 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         Debug.Log($"[MLevelSelectionManager] Scene loaded. IsMasterClient: {PhotonNetwork.IsMasterClient} | PlayerCount: {PhotonNetwork.CurrentRoom?.PlayerCount ?? 0}");
         InitializeReferences();
         LoadStateFromPrefs();
+        ClearRoleSelectionState();
         BindStageButtons();
         SetupRoleIndicators();
         HideFeedback();
@@ -257,13 +262,13 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
             return;
         }
 
-        if (!IsPlayerTwoPresent())
+        if (!singlePlayerTestMode && !IsPlayerTwoPresent())
         {
             ShowFeedback("Player 2 is not here yet!");
             return;
         }
 
-        if (!rolesSelected)
+        if (!singlePlayerTestMode && !rolesSelected)
         {
             ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not picked a role yet!");
             return;
@@ -271,7 +276,10 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
         if (!levelSelected)
         {
-            ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not agreed on a level yet!");
+            if (singlePlayerTestMode)
+                ShowFeedback("You have not selected a level yet!");
+            else
+                ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not agreed on a level yet!");
             return;
         }
 
@@ -455,23 +463,63 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     private void UpdateLevelSelectedState()
     {
-        bool bothPicked = !string.IsNullOrEmpty(player1SelectedScene) && !string.IsNullOrEmpty(player2SelectedScene);
-        bool matches = bothPicked && player1SelectedScene == player2SelectedScene;
+        bool levelReady = false;
 
-        if (matches)
+        if (singlePlayerTestMode)
         {
-            pendingLevelScene = player1SelectedScene;
+            // In single-player mode, just need the local player to select a level
+            string localSelection = GetLocalSelectedLevelScene();
+            levelReady = !string.IsNullOrEmpty(localSelection);
+            if (levelReady)
+                pendingLevelScene = localSelection;
+            else
+                pendingLevelScene = string.Empty;
+        }
+        else
+        {
+            // In multiplayer mode, both players must select the same level
+            bool bothPicked = !string.IsNullOrEmpty(player1SelectedScene) && !string.IsNullOrEmpty(player2SelectedScene);
+            levelReady = bothPicked && player1SelectedScene == player2SelectedScene;
+
+            if (levelReady)
+                pendingLevelScene = player1SelectedScene;
+            else
+                pendingLevelScene = string.Empty;
+        }
+
+        if (!string.IsNullOrEmpty(pendingLevelScene))
+        {
             PlayerPrefs.SetString(SelectedLevelSceneKey, pendingLevelScene);
             PlayerPrefs.Save();
         }
         else
         {
-            pendingLevelScene = string.Empty;
             PlayerPrefs.DeleteKey(SelectedLevelSceneKey);
             PlayerPrefs.Save();
         }
 
-        SetLevelSelected(matches);
+        SetLevelSelected(levelReady);
+    }
+
+    /// <summary>
+    /// Wipes all role-selection state: in-memory picks and PlayerPrefs.
+    /// Call when entering a new room so roles are always available for fresh picking.
+    /// </summary>
+    private void ClearRoleSelectionState()
+    {
+        selectedRole1By = string.Empty;
+        selectedRole2By = string.Empty;
+        selectedRole1IsPlayerOne = null;
+        selectedRole2IsPlayerOne = null;
+
+        PlayerPrefs.DeleteKey(Role1SelectedByKey);
+        PlayerPrefs.DeleteKey(Role2SelectedByKey);
+        PlayerPrefs.DeleteKey(Role1IsPlayerOneKey);
+        PlayerPrefs.DeleteKey(Role2IsPlayerOneKey);
+        PlayerPrefs.DeleteKey(RolesSelectedKey);
+        PlayerPrefs.Save();
+
+        UpdateRoleButtons();
     }
 
     /// <summary>
@@ -620,9 +668,13 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     /// <summary>
     /// Live check instead of a cached/PlayerPrefs flag - avoids the same kind of staleness bug
     /// that isPlayerOne had. Room player count is always accurate the moment Photon updates it.
+    /// In single-player test mode, this always returns true to bypass the 2-player requirement.
     /// </summary>
     private bool IsPlayerTwoPresent()
     {
+        if (singlePlayerTestMode)
+            return true;
+
         return PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.PlayerCount >= 2;
     }
 
@@ -811,6 +863,10 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     private bool AreRolesFullySelected()
     {
+        // In single-player test mode, role selection is not required
+        if (singlePlayerTestMode)
+            return true;
+
         return !string.IsNullOrEmpty(selectedRole1By) && !string.IsNullOrEmpty(selectedRole2By);
     }
 
