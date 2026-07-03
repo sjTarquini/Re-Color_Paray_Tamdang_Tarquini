@@ -257,7 +257,7 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
             return;
         }
 
-        if (!playerTwoArrived)
+        if (!IsPlayerTwoPresent())
         {
             ShowFeedback("Player 2 is not here yet!");
             return;
@@ -499,6 +499,16 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         ClearLevelSelectionState();
     }
 
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        UpdateReadyButtonState();
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        UpdateReadyButtonState();
+    }
+
     private void RefreshStageIndicators()
     {
         string localSelection = GetLocalSelectedLevelScene();
@@ -603,8 +613,17 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
             // Only the host's Ready button can ever become interactable.
             // Non-host clients can still see selections/indicators, but can't start the game.
             bool isHost = PhotonNetwork.IsMasterClient;
-            readyButton.interactable = isHost && playerTwoArrived && rolesSelected && levelSelected;
+            readyButton.interactable = isHost && IsPlayerTwoPresent() && rolesSelected && levelSelected;
         }
+    }
+
+    /// <summary>
+    /// Live check instead of a cached/PlayerPrefs flag - avoids the same kind of staleness bug
+    /// that isPlayerOne had. Room player count is always accurate the moment Photon updates it.
+    /// </summary>
+    private bool IsPlayerTwoPresent()
+    {
+        return PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.PlayerCount >= 2;
     }
 
     // ---------------------------------------------------------------
