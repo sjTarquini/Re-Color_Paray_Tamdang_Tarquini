@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 using Photon.Realtime;
+using System.Text;
 
 public class RoomManager : MonoBehaviourPunCallbacks
 {
@@ -31,20 +32,15 @@ public class RoomManager : MonoBehaviourPunCallbacks
         createRoomButton.interactable = hasInput;
         joinRoomButton.interactable = hasInput;
     }
-
     public void CreateRoom()
     {
-        if (PhotonNetwork.InRoom || PhotonNetwork.NetworkClientState == ClientState.Leaving)
-        {
-            Debug.Log("Waiting to leave previous room...");
-            PhotonNetwork.LeaveRoom();
-            return;
-        }
-
         PhotonNetwork.NickName = userNameInputField.text;
 
+        string rawInput = roomNameInputField.text.Trim();
+        string roomName = FilterDigits(rawInput);
+
         RoomOptions options = new RoomOptions { MaxPlayers = 2 };
-        PhotonNetwork.CreateRoom(roomNameInputField.text, options);
+        PhotonNetwork.CreateRoom(roomName, options);
     }
 
     public void JoinRoom()
@@ -56,9 +52,24 @@ public class RoomManager : MonoBehaviourPunCallbacks
         }
 
         PhotonNetwork.NickName = userNameInputField.text;
-        PhotonNetwork.JoinRoom(roomNameInputField.text);
+
+        string rawInput = roomNameInputField.text.Trim();
+        string roomName = FilterDigits(rawInput);
+
+        Debug.Log($"Trying to join room: {roomName}");
+        PhotonNetwork.JoinRoom(roomName);
     }
 
+    private string FilterDigits(string input)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (char c in input)
+        {
+            if (char.IsDigit(c))
+                sb.Append(c);
+        }
+        return sb.ToString();
+    }
 
     // ================= CALLBACKS =================
     public override void OnConnectedToMaster()
