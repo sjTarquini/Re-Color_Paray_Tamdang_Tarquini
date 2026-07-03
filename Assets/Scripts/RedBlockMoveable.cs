@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Photon.Pun;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class RedBlockMoveable : MonoBehaviour
@@ -8,6 +9,7 @@ public class RedBlockMoveable : MonoBehaviour
     [SerializeField] private float collisionBuffer = 0.05f;
     [SerializeField] private float maxDragSpeed = 6f;
     [SerializeField] private GameObject[] wayPoints;
+    [SerializeField] private PhotonView photonView;
 
     private Vector3 offset;
     private Rigidbody2D rb;
@@ -27,6 +29,9 @@ public class RedBlockMoveable : MonoBehaviour
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
+        if (photonView == null)
+            photonView = GetComponent<PhotonView>();
+
         contactFilter = new ContactFilter2D();
         contactFilter.SetLayerMask(blockingLayers);
         contactFilter.useLayerMask = true;
@@ -35,6 +40,13 @@ public class RedBlockMoveable : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Safety net: even though isDragged is only ever set true locally by whichever client
+        // clicked the block (MoveCursor.MouseClick), also require ownership before actually
+        // moving it. This covers the brief window right after a click where TransferOwnership
+        // has been requested but PUN hasn't confirmed it back yet.
+        if (photonView != null && !photonView.IsMine)
+            return;
+
         if (isDragged)
         {
             DragObject();

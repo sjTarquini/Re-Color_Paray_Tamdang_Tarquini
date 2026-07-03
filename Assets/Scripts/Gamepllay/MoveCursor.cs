@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Photon.Pun;
 public class MoveCursor : MonoBehaviour
 {
     [Header("Cursor Settings")]
@@ -20,11 +21,27 @@ public class MoveCursor : MonoBehaviour
     [SerializeField] private GameObject draggedObject;
     private bool isDraggingObject;
 
+    [Header("Networking")]
+    [SerializeField] private PhotonView photonView;
+    [Tooltip("Interval in seconds between cursor-position RPCs sent to the other player. Lower = smoother but more network traffic.")]
+    [SerializeField] private float cursorSyncInterval = 0.05f;
+    private float cursorSyncTimer;
+
+    [Header("Remote Cursor (shows the OTHER player's pointer)")]
+    [Tooltip("RectTransform used to display where the other player's cursor is. Separate object from cursorRect.")]
+    [SerializeField] private RectTransform remoteCursorRect;
+
     private bool customCursorActive;
 
     private void Start()
     {
         SetCustomCursorActive(false);
+
+        if (photonView == null)
+            photonView = GetComponent<PhotonView>();
+
+        if (remoteCursorRect != null)
+            remoteCursorRect.gameObject.SetActive(false);
     }
 
     private void Update()
@@ -59,6 +76,13 @@ public class MoveCursor : MonoBehaviour
         Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
 
         UpdateCursorVisualPosition(screenPos);
+
+        cursorSyncTimer += Time.deltaTime;
+        if (cursorSyncTimer >= cursorSyncInterval)
+        {
+            cursorSyncTimer = 0f;
+            SendCursorPosition(screenPos);
+        }
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
@@ -104,6 +128,41 @@ public class MoveCursor : MonoBehaviour
         cursorImage.sprite = isDraggingObject ? clickHoldCursorSprite : idleCursorSprite;
     }
 
+    // ---------------------------------------------------------------
+    // Remote cursor sync - lets the OTHER player see this cursor move.
+    // Position is normalized (0-1) before sending so it maps correctly
+    // even if the two clients have different screen resolutions.
+    // ---------------------------------------------------------------
+
+    private void SendCursorPosition(Vector2 screenPos)
+    {
+        if (photonView == null || !PhotonNetwork.InRoom)
+            return;
+
+        Vector2 normalized = new Vector2(screenPos.x / Screen.width, screenPos.y / Screen.height);
+        photonView.RPC(nameof(RpcUpdateRemoteCursor), RpcTarget.Others, normalized);
+    }
+
+    [PunRPC]
+    private void RpcUpdateRemoteCursor(Vector2 normalizedScreenPos)
+    {
+        if (remoteCursorRect == null || cursorCanvas == null)
+            return;
+
+        Vector2 screenPos = new Vector2(normalizedScreenPos.x * Screen.width, normalizedScreenPos.y * Screen.height);
+
+        RectTransform canvasRect = cursorCanvas.transform as RectTransform;
+        Camera uiCamera = cursorCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cursorCanvas.worldCamera;
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, uiCamera, out Vector2 localPoint))
+        {
+            remoteCursorRect.anchoredPosition = localPoint;
+        }
+
+        if (!remoteCursorRect.gameObject.activeSelf)
+            remoteCursorRect.gameObject.SetActive(true);
+    }
+
     private void MouseClick(Vector2 mousePos2D)
     {
         RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero, Mathf.Infinity, interactLayer);
@@ -114,6 +173,13 @@ public class MoveCursor : MonoBehaviour
             {
                 draggedObject = clickedObject;
                 RedBlockMoveable red = draggedObject.GetComponent<RedBlockMoveable>();
+
+                // Claim ownership of this block so this client is authoritative while dragging it.
+                // Requires the block's PhotonView to have Ownership Transfer set to "Takeover".
+                PhotonView redView = draggedObject.GetComponent<PhotonView>();
+                if (redView != null && !redView.IsMine)
+                    redView.TransferOwnership(PhotonNetwork.LocalPlayer);
+
                 isDraggingObject = true;
                 red.isDragged = true;
                 red.SetOffset();
