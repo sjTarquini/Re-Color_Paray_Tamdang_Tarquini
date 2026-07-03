@@ -2666,9 +2666,9 @@ MonoBehaviour:
   roleFeedbackPopup: {fileID: 1941395212}
   roleFeedbackText: {fileID: 1941395214}
   roleFeedbackDuration: 2
-  isPlayerOne: 1
   role1IndicatorAnchor: {fileID: 97743770}
   role2IndicatorAnchor: {fileID: 639805467}
+  createServerSceneName: CreateServer
 --- !u!1 &745226623
 GameObject:
   m_ObjectHideFlags: 0
@@ -3704,8 +3704,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 734159072}
-        m_TargetAssemblyTypeName: Photon.Pun.MonoBehaviourPunCallbacks, PhotonUnityNetworking
-        m_MethodName: OnLeftLobby
+        m_TargetAssemblyTypeName: MLevelSelectionManager, Assembly-CSharp
+        m_MethodName: OnLeaveButtonPressed
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -171,12 +171,6 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         UpdateLevelSelectedState();
         UpdateReadyButtonState();
 
-        // Restrict role toggle to host only
-        if (roleSelectionToggleButton != null)
-        {
-            roleSelectionToggleButton.interactable = PhotonNetwork.IsMasterClient;
-        }
-
         if (feedbackPopup == null)
             Debug.LogWarning("[MLevelSelectionManager] No feedbackPopup assigned/found. ShowFeedback() will silently do nothing.");
         if (feedbackText == null)
@@ -213,9 +207,6 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     public void OnRoleSelectionTogglePressed()
     {
-        // Only host should reach here, but double-check
-        if (!PhotonNetwork.IsMasterClient) return;
-
         isRoleSelectMode = !isRoleSelectMode;
 
         if (roleSelectionToggleButtonText != null)
