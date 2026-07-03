@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Player 1 has chosen Grey!
+  m_text: Player 1 has chosen Level 1.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 62ece79b66b4f8540a01ab8e3a054771, type: 2}
   m_sharedMaterial: {fileID: -2705055700716193722, guid: 62ece79b66b4f8540a01ab8e3a054771, type: 2}

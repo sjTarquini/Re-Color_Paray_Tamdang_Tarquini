@@ -74,13 +74,16 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     [SerializeField] private GameObject roleFeedbackPopup;
     [SerializeField] private TextMeshProUGUI roleFeedbackText;
     [SerializeField] private float roleFeedbackDuration = 2f;
-    [SerializeField] private bool isPlayerOne = true;  // Set at runtime
 
     [Header("Role Selection Indicators")]
     [Tooltip("Where the P1/P2 owner icon appears for Role1. Leave empty to default to the Role1 Select button.")]
     [SerializeField] private RectTransform role1IndicatorAnchor;
     [Tooltip("Where the P1/P2 owner icon appears for Role2. Leave empty to default to the Role2 Select button.")]
     [SerializeField] private RectTransform role2IndicatorAnchor;
+
+    [Header("Leave / Back")]
+    [Tooltip("Scene to load when the local player presses the Leave button (e.g. the lobby/create-server scene).")]
+    [SerializeField] private string createServerSceneName = "CreateServer";
 
     private Coroutine feedbackHideRoutine;
     private Coroutine roleFeedbackHideRoutine;
@@ -101,6 +104,15 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     private string player1SelectedScene = string.Empty;
     private string player2SelectedScene = string.Empty;
+
+    // FIX (joiner-uses-host-assets bug): this used to be a [SerializeField] bool that was cached
+    // once in Start() via "isPlayerOne = PhotonNetwork.IsMasterClient;" behind an
+    // "if (PhotonNetwork.InRoom)" check. If Start() ran before Photon had fully confirmed room
+    // membership on the joiner's client (a real race right after a synced scene load), that check
+    // could evaluate false and isPlayerOne would keep its default value of `true` forever -
+    // making the joiner permanently think it was Player 1. Making this a live computed property
+    // means it can never go stale: it always reflects Photon's current state.
+    private bool isPlayerOne => PhotonNetwork.IsMasterClient;
 
     private const string PlayerTwoArrivedKey = "MultiplayerPlayerTwoArrived";
     private const string RolesSelectedKey = "MultiplayerRolesSelected";
@@ -146,17 +158,14 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         ShowDefaultGroup();
         UpdateRoleButtons();
 
-        if (PhotonNetwork.InRoom)
-        {
-            // Player 1 = Host (MasterClient). This is the reliable way for 2-player rooms.
-            isPlayerOne = PhotonNetwork.IsMasterClient;
-
-            Debug.Log($"=== LOCAL PLAYER INFO ===\n" +
-                    $"ActorNumber: {PhotonNetwork.LocalPlayer.ActorNumber}\n" +
-                    $"IsMasterClient: {PhotonNetwork.IsMasterClient}\n" +
-                    $"isPlayerOne (our logic): {isPlayerOne}\n" +
-                    $"NickName: {PhotonNetwork.NickName}");
-        }
+        // isPlayerOne is now a live property (PhotonNetwork.IsMasterClient), so no caching/assignment
+        // needed here anymore. Kept the diagnostic log since it's still useful for debugging.
+        Debug.Log($"=== LOCAL PLAYER INFO ===\n" +
+                $"ActorNumber: {PhotonNetwork.LocalPlayer?.ActorNumber ?? -1}\n" +
+                $"IsMasterClient: {PhotonNetwork.IsMasterClient}\n" +
+                $"isPlayerOne: {isPlayerOne}\n" +
+                $"NickName: {PhotonNetwork.NickName}\n" +
+                $"Room PlayerCount: {PhotonNetwork.CurrentRoom?.PlayerCount ?? 0}");
 
         RefreshStageIndicators();
         UpdateLevelSelectedState();
@@ -280,6 +289,20 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         ClearLevelSelectionState();
 
         PhotonNetwork.LoadLevel(sceneToLoad);
+    }
+
+    /// <summary>
+    /// Hook this up to a "Leave" / "Back" button. Leaves the Photon room (which also clears
+    /// local level-selection state via OnLeftRoom) and returns to the create-server scene.
+    /// </summary>
+    public void OnLeaveButtonPressed()
+    {
+        ClearLevelSelectionState();
+
+        if (PhotonNetwork.InRoom)
+            PhotonNetwork.LeaveRoom();
+
+        SceneManager.LoadScene(createServerSceneName);
     }
 
     private void InitializeReferences()
@@ -430,6 +453,13 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         UpdateLevelSelectionPrefs();
         RefreshStageIndicators();
         UpdateLevelSelectedState();
+
+        // FIX: show feedback whenever a level pick changes, same pattern as role feedback.
+        string playerName = fromPlayerOne ? GetPlayerOneName() : GetPlayerTwoName();
+        if (!string.IsNullOrEmpty(sceneName))
+            ShowFeedback($"{playerName} selected {sceneName}!");
+        else
+            ShowFeedback($"{playerName} deselected their level.");
     }
 
     private void UpdateLevelSelectedState()
@@ -687,6 +717,20 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         group.blocksRaycasts = visible;
     }
 
+    /// <summary>
+    /// Display name for a role index, used in feedback messages.
+    /// Role1 = "Grey", Role2 = "The Cursor".
+    /// </summary>
+    private string GetRoleName(int roleIndex)
+    {
+        switch (roleIndex)
+        {
+            case 1: return "Grey";
+            case 2: return "The Cursor";
+            default: return $"Role{roleIndex}";
+        }
+    }
+
     private void UpdateRoleButtons()
     {
         bool role1Selected = !string.IsNullOrEmpty(selectedRole1By);
@@ -741,17 +785,17 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         ApplyRoleIndicatorSprite(role2Indicator, selectedRole2IsPlayerOne);
     }
 
-    private void ApplyRoleIndicatorSprite(Image indicator, bool? isPlayerOne)
+    private void ApplyRoleIndicatorSprite(Image indicator, bool? isPlayerOneOwner)
     {
         if (indicator == null) return;
 
-        if (isPlayerOne == null)
+        if (isPlayerOneOwner == null)
         {
             indicator.gameObject.SetActive(false);
             return;
         }
 
-        indicator.sprite = isPlayerOne.Value ? player1IndicatorSprite : player2IndicatorSprite;
+        indicator.sprite = isPlayerOneOwner.Value ? player1IndicatorSprite : player2IndicatorSprite;
         indicator.gameObject.SetActive(true);
     }
 
@@ -776,7 +820,7 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
             if ((roleIndex == 1 && !string.IsNullOrEmpty(selectedRole1By)) ||
                 (roleIndex == 2 && !string.IsNullOrEmpty(selectedRole2By)))
             {
-                ShowRoleFeedback($"Role{roleIndex} is already taken.");
+                ShowRoleFeedback($"{GetRoleName(roleIndex)} is already taken.");
                 return;
             }
         }
@@ -818,9 +862,9 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         UpdateRoleButtons();
 
         if (selected)
-            ShowRoleFeedback($"{selectedBy} has selected Role{roleIndex}!");
+            ShowRoleFeedback($"{selectedBy} has selected {GetRoleName(roleIndex)}!");
         else
-            ShowRoleFeedback($"{selectedBy} has deselected the Role{roleIndex} Role.");
+            ShowRoleFeedback($"{selectedBy} has deselected {GetRoleName(roleIndex)}.");
     }
 
     private void UpdateRoleSelectionPrefs()

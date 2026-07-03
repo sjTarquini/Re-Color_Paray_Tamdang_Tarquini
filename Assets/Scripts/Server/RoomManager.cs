@@ -44,7 +44,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         string roomName = FilterDigits(rawInput);
 
         RoomOptions options = new RoomOptions { MaxPlayers = 2 };
-        PhotonNetwork.JoinOrCreateRoom(roomNameInputField.text.Trim(), options, TypedLobby.Default);
+        PhotonNetwork.CreateRoom(roomNameInputField.text.Trim(), options, TypedLobby.Default);
     }
 
     public void JoinRoom()
