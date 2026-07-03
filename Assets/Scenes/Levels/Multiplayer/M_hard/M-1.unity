@@ -2003,7 +2003,7 @@ MonoBehaviour:
   draggedObject: {fileID: 0}
   photonView: {fileID: 1419436345}
   cursorSyncInterval: 0.05
-  remoteCursorRect: {fileID: 0}
+  remoteCursorRect: {fileID: 1419436341}
 --- !u!114 &1419436343
 MonoBehaviour:
   m_ObjectHideFlags: 0
