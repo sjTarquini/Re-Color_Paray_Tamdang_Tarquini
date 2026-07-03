@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-
-// Handles cursor interactions and dragging for Role2
 public class MoveCursor : MonoBehaviour
 {
     [Header("Cursor Settings")]
@@ -26,7 +24,6 @@ public class MoveCursor : MonoBehaviour
 
     private void Start()
     {
-        // Hidden until we confirm the local player actually owns Role2.
         SetCustomCursorActive(false);
     }
 
@@ -38,9 +35,7 @@ public class MoveCursor : MonoBehaviour
             return;
         }
 
-        int role = 0;
-        if (MLevelSelectionManager.Instance != null)
-            role = MLevelSelectionManager.Instance.GetLocalSelectedRoleIndexPublic();
+        int role = MLevelSelectionManager.GetLocalRoleIndexFromPrefs();
 
         if (role != 2)
         {

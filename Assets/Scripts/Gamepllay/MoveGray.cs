@@ -57,11 +57,7 @@ public class MoveGray : MonoBehaviour
         if (!PlayerManager.Instance.IsAlive)
             return;
 
-        int role = 0;
-        if (MLevelSelectionManager.Instance != null)
-            role = MLevelSelectionManager.Instance.GetLocalSelectedRoleIndexPublic();
-
-        // Only process keyboard for Role1
+        int role = MLevelSelectionManager.GetLocalRoleIndexFromPrefs();
         if (role == 1)
             HandleInput();
         else

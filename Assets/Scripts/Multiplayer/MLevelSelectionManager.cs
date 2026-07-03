@@ -904,6 +904,32 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     /// </summary>
     public int GetLocalSelectedRoleIndexPublic() => GetLocalSelectedRoleIndex();
 
+    /// <summary>
+    /// Static role lookup that works from ANY scene, even ones where no MLevelSelectionManager
+    /// instance exists (e.g. the actual gameplay scene). Reads directly from the PlayerPrefs
+    /// values written during role selection, so it doesn't depend on this component - or its
+    /// singleton Instance - surviving the scene transition triggered by PhotonNetwork.LoadLevel.
+    /// Use this from gameplay scripts like MoveGray/MoveCursor instead of Instance.
+    /// Returns 0 = no role, 1 = Grey, 2 = The Cursor.
+    /// </summary>
+    public static int GetLocalRoleIndexFromPrefs()
+    {
+        string role1By = PlayerPrefs.GetString(Role1SelectedByKey, string.Empty);
+        string role2By = PlayerPrefs.GetString(Role2SelectedByKey, string.Empty);
+
+        string localName;
+        if (PhotonNetwork.InRoom && !string.IsNullOrEmpty(PhotonNetwork.NickName))
+            localName = PhotonNetwork.NickName;
+        else
+            localName = PhotonNetwork.IsMasterClient
+                ? PlayerPrefs.GetString(PlayerOneNameKey, "Player 1")
+                : PlayerPrefs.GetString(PlayerTwoNameKey, "Player 2");
+
+        if (!string.IsNullOrEmpty(role1By) && role1By == localName) return 1;
+        if (!string.IsNullOrEmpty(role2By) && role2By == localName) return 2;
+        return 0;
+    }
+
     public void OnEvent(EventData photonEvent)
     {
         if (photonEvent.Code == EventRoleSelectionChanged)
