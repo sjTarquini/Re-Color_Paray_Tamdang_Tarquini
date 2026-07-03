@@ -89,7 +89,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnCreatedRoom()
     {
         Debug.Log("Room Created! Loading Level Selection...");
-        PhotonNetwork.LoadLevel("M_LevelSelection");
     }
 
     public override void OnJoinedRoom()

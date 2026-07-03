@@ -74,7 +74,7 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     [SerializeField] private GameObject roleFeedbackPopup;
     [SerializeField] private TextMeshProUGUI roleFeedbackText;
     [SerializeField] private float roleFeedbackDuration = 2f;
-    [SerializeField] private bool isPlayerOne = true;
+    [SerializeField] private bool isPlayerOne = true;  // Set at runtime
 
     [Header("Role Selection Indicators")]
     [Tooltip("Where the P1/P2 owner icon appears for Role1. Leave empty to default to the Role1 Select button.")]
@@ -148,9 +148,8 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
         if (PhotonNetwork.InRoom)
         {
-            // Better way to determine "Player 1"
-            isPlayerOne = PhotonNetwork.IsMasterClient || 
-                        PhotonNetwork.LocalPlayer.ActorNumber == 1;
+            // Player 1 = Host (MasterClient). This is the reliable way for 2-player rooms.
+            isPlayerOne = PhotonNetwork.IsMasterClient;
 
             Debug.Log($"=== LOCAL PLAYER INFO ===\n" +
                     $"ActorNumber: {PhotonNetwork.LocalPlayer.ActorNumber}\n" +
@@ -162,6 +161,12 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         RefreshStageIndicators();
         UpdateLevelSelectedState();
         UpdateReadyButtonState();
+
+        // Restrict role toggle to host only
+        if (roleSelectionToggleButton != null)
+        {
+            roleSelectionToggleButton.interactable = PhotonNetwork.IsMasterClient;
+        }
 
         if (feedbackPopup == null)
             Debug.LogWarning("[MLevelSelectionManager] No feedbackPopup assigned/found. ShowFeedback() will silently do nothing.");
@@ -199,6 +204,9 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     public void OnRoleSelectionTogglePressed()
     {
+        // Only host should reach here, but double-check
+        if (!PhotonNetwork.IsMasterClient) return;
+
         isRoleSelectMode = !isRoleSelectMode;
 
         if (roleSelectionToggleButtonText != null)
@@ -242,42 +250,37 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
     }
 
     public void OnReadyButtonPressed()
-{
-    if (!PhotonNetwork.IsMasterClient)
     {
-        ShowFeedback("Only the host can start the game!");
-        return;
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            ShowFeedback("Only the host can start the game!");
+            return;
+        }
+
+        if (!playerTwoArrived)
+        {
+            ShowFeedback("Player 2 is not here yet!");
+            return;
+        }
+
+        if (!rolesSelected)
+        {
+            ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not picked a role yet!");
+            return;
+        }
+
+        if (!levelSelected)
+        {
+            ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not agreed on a level yet!");
+            return;
+        }
+
+        HideFeedback();
+        string sceneToLoad = pendingLevelScene;
+        ClearLevelSelectionState();
+
+        PhotonNetwork.LoadLevel(sceneToLoad);
     }
-
-    if (!playerTwoArrived)
-    {
-        ShowFeedback("Player 2 is not here yet!");
-        return;
-    }
-
-    if (!rolesSelected)
-    {
-        ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not picked a role yet!");
-        return;
-    }
-
-    if (!levelSelected)
-    {
-        ShowFeedback($"{GetPlayerOneName()} and {GetPlayerTwoName()} have not agreed on a level yet!");
-        return;
-    }
-
-    HideFeedback();
-    string sceneToLoad = pendingLevelScene;
-    ClearLevelSelectionState();
-
-    PhotonNetwork.LoadLevel(sceneToLoad);
-    // Use Photon to load for everyone
-    // if (LevelTransitioner.Instance != null)
-    //     LevelTransitioner.Instance.TransitionToLevel(sceneToLoad);
-    // else
-    //     PhotonNetwork.LoadLevel(sceneToLoad);
-}
 
     private void InitializeReferences()
     {
