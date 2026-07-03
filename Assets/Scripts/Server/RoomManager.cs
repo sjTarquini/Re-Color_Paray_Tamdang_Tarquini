@@ -16,8 +16,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-        PhotonNetwork.AutomaticallySyncScene = true;
-        
         if (connectionStatusText != null)
             connectionStatusText.gameObject.SetActive(false);
 
@@ -51,11 +49,16 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void JoinRoom()
     {
-        if (PhotonNetwork.InRoom) return;
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            Debug.LogWarning("Not connected to Master yet!");
+            return;
+        }
 
         PhotonNetwork.NickName = userNameInputField.text;
         PhotonNetwork.JoinRoom(roomNameInputField.text);
     }
+
 
     // ================= CALLBACKS =================
     public override void OnConnectedToMaster()
@@ -77,10 +80,12 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log($"Joined Room! Players: {PhotonNetwork.CurrentRoom.PlayerCount} | IsMaster: {PhotonNetwork.IsMasterClient}");
-
-        if (SceneManager.GetActiveScene().name != "M_LevelSelection")
+        if (PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.LoadLevel("M_LevelSelection");
+            if (SceneManager.GetActiveScene().name != "M_LevelSelection")
+            {
+                PhotonNetwork.LoadLevel("M_LevelSelection");
+            }
         }
     }
 
@@ -96,6 +101,6 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.LogError($"Join Room Failed: {message}");
+        Debug.LogError($"Join Room Failed ({returnCode}): {message}");
     }
 }
