@@ -1,18 +1,14 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-// NOTE: This uses Rigidbody2D.velocity / .drag, which work on Unity 2022/2023 and earlier.
-// If you're on Unity 6+, those are obsolete - swap every `rb.velocity` for `rb.linearVelocity`
-// and `rb.drag` for `rb.linearDamping`.
-    public class GrayMovement : MonoBehaviour
+// Handles keyboard movement/jump for Role1 (Gray character)
+public class MoveGray : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheckPoint;
-    [SerializeField] private SpriteRenderer spriteRenderer; // optional, used for facing flip
+    [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Animator animator;
-
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
@@ -31,14 +27,6 @@ using UnityEngine.InputSystem;
     [SerializeField] private int maxJumpCount = 2;
     [SerializeField] private bool enableDebugDoubleJump = false;
     [SerializeField] private float cartwheelDuration = 0.25f;
-
-    [Header("Drag Object References")]
-    [Tooltip("Currently dragged object. Set by mouse click.")]
-
-    [Header("Audio")]
-
-    [SerializeField] private GameObject draggedObject;
-    private bool isDraggingObject;
 
     private float horizontalInput;
     private bool isGrounded;
@@ -61,51 +49,29 @@ using UnityEngine.InputSystem;
         jumpCount = ActiveJumpCount;
 
         if (groundCheckPoint == null)
-        {
             groundCheckPoint = transform;
-            Debug.LogWarning($"{name}: groundCheckPoint wasn't assigned, so using the character root transform as fallback. Create a child object at the feet for more accurate ground detection.", this);
-        }
     }
 
     void Update()
     {
         if (!PlayerManager.Instance.IsAlive)
-        {
             return;
-        }
 
-        HandleInput();
-        UpdateAnimation();
+        int role = 0;
+        if (MLevelSelectionManager.Instance != null)
+            role = MLevelSelectionManager.Instance.GetLocalSelectedRoleIndexPublic();
 
-
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-
-        RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-
-        if (hit.collider != null && hit.collider.CompareTag("RedMoveable"))
-        {
-            // Change cursor to "pointer" style
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-        }
+        // Only process keyboard for Role1
+        if (role == 1)
+            HandleInput();
         else
         {
-            // Reset to default arrow
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            horizontalInput = 0f;
+            isRunning = false;
+            jumpRequested = false;
         }
 
-        if (isDraggingObject && Input.GetMouseButtonUp(0))
-        {
-            if (draggedObject != null)
-            {
-                RedBlockMoveable redBlockMoveable = draggedObject.GetComponent<RedBlockMoveable>();
-                redBlockMoveable.isDragged = false;
-                draggedObject = null;
-            }
-            isDraggingObject = false;
-
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-        }
+        UpdateAnimation();
     }
 
     void FixedUpdate()
@@ -113,9 +79,7 @@ using UnityEngine.InputSystem;
         CheckGrounded();
 
         if (isGrounded && !wasGrounded)
-        {
             jumpCount = ActiveJumpCount;
-        }
 
         ApplyDrag();
         ApplyFallMultiplier();
@@ -142,22 +106,6 @@ using UnityEngine.InputSystem;
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             jumpRequested = true;
-
-        // Mouse click attempt
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            Debug.Log("Mouse pressed.");
-            MouseClick();
-        }
-
-        if (isDraggingObject)
-        {
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                Debug.Log("Object let go of.");
-                MouseLetGo();
-            }
-        }
     }
 
     private void TryConsumeJump()
@@ -189,47 +137,10 @@ using UnityEngine.InputSystem;
         InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.jumpSound);
 
         if (isSecondJump)
-            StartCartwheel();
-        InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.jumpSound);
-    }
-
-
-    private void MouseClick()
-    {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-
-        // Cast a ray at that exact point in 2D space
-        RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-
-        // Check if the ray hit a 2D collider
-        if (hit.collider != null)
         {
-            GameObject clickedObject = hit.collider.gameObject;
-            Debug.Log("Globally detected click on: " + clickedObject.name);
-            // Interact with the object here
-            if (clickedObject.CompareTag("RedMoveable") &&
-            clickedObject.GetComponent<RedBlockMoveable>() != null)
-            {
-                // Sets the player's currently "dragged object" as the object detected from raycast.
-                Debug.Log("Object is moveable.");
-                draggedObject = clickedObject;
-
-                RedBlockMoveable redBlockMoveable = draggedObject.GetComponent<RedBlockMoveable>();
-
-                isDraggingObject = true;
-                redBlockMoveable.isDragged = true;
-                redBlockMoveable.SetOffset();
-            }
+            StartCartwheel();
+            InGameAudioManager.Instance.PlaySound(InGameAudioManager.Instance.jumpSound);
         }
-    }
-
-    private void MouseLetGo()
-    {
-        RedBlockMoveable redBlockMoveable = draggedObject.GetComponent<RedBlockMoveable>();
-        isDraggingObject = false;
-        redBlockMoveable.isDragged = false;
-        draggedObject = null;
     }
 
     private int ActiveJumpCount => (Debug.isDebugBuild && enableDebugDoubleJump) ? maxJumpCount : 1;
@@ -299,7 +210,6 @@ using UnityEngine.InputSystem;
     {
         if (animator == null) return;
 
-        // Core parameters
         animator.SetBool("IsGrounded", isGrounded);
         animator.SetBool("IsRunning", isRunning && isGrounded);
         animator.SetFloat("Speed", Mathf.Abs(horizontalInput) * (isRunning ? runSpeed : moveSpeed));
@@ -332,12 +242,5 @@ using UnityEngine.InputSystem;
 
         spriteRenderer.transform.localEulerAngles = new Vector3(0f, startY, 0f);
         cartwheelCoroutine = null;
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        if (groundCheckPoint == null) return;
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(groundCheckPoint.position, groundCheckRadius);
     }
 }

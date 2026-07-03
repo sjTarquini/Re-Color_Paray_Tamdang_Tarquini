@@ -5,9 +5,6 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using Photon.Realtime;
 
-/// <summary>
-/// Script for managing the CreateServer scene's UI elements and room joining functions.
-/// </summary>
 public class RoomManager : MonoBehaviourPunCallbacks
 {
     [Header("UI Elements")]
@@ -17,38 +14,50 @@ public class RoomManager : MonoBehaviourPunCallbacks
     [SerializeField] private Button joinRoomButton;
     [SerializeField] private TextMeshProUGUI connectionStatusText;
 
-    private bool isConnectedToMaster;
-
     private void Awake()
     {
-        isConnectedToMaster = false;
+        PhotonNetwork.AutomaticallySyncScene = true;
 
         if (connectionStatusText != null)
-        {
             connectionStatusText.gameObject.SetActive(false);
-        }
 
         createRoomButton.interactable = false;
         joinRoomButton.interactable = false;
     }
 
-    void Update()
+    private void Update()
     {
-        bool hasValidInput = !string.IsNullOrEmpty(userNameInputField.text) && !string.IsNullOrEmpty(roomNameInputField.text);
-        bool canInteract = isConnectedToMaster;
-
-        createRoomButton.interactable = canInteract;
-        joinRoomButton.interactable = canInteract;
+        bool hasValidInput = !string.IsNullOrEmpty(userNameInputField.text) && 
+                            !string.IsNullOrEmpty(roomNameInputField.text);
+        
+        createRoomButton.interactable = hasValidInput;
+        joinRoomButton.interactable = hasValidInput;
     }
 
     public void CreateRoom()
     {
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+            return;
+        }
+
         PhotonNetwork.NickName = userNameInputField.text;
-        PhotonNetwork.CreateRoom(roomNameInputField.text);
+
+        RoomOptions options = new RoomOptions
+        {
+            MaxPlayers = 2,
+            IsVisible = true,
+            IsOpen = true
+        };
+
+        PhotonNetwork.CreateRoom(roomNameInputField.text, options);
     }
 
     public void JoinRoom()
     {
+        if (PhotonNetwork.InRoom) return;
+
         PhotonNetwork.NickName = userNameInputField.text;
         PhotonNetwork.JoinRoom(roomNameInputField.text);
     }
@@ -56,41 +65,59 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public void ReturnToMainMenu()
     {
         PhotonNetwork.Disconnect();
-        // SceneManager.LoadScene("GameType");
+        SceneManager.LoadScene("MainMenu");
     }
 
-    public override void OnDisconnected(DisconnectCause cause)
-    {
-        base.OnDisconnected(cause);
-        SceneManager.LoadScene("GameType");
-        Debug.Log("Disconnected from server: " + cause.ToString());
-    }
+    // ====================== CALLBACKS ======================
 
-    public void SetConnectedToMaster(bool connected)
+    public override void OnConnectedToMaster()
     {
-        isConnectedToMaster = connected;
-
-        if (connectionStatusText != null)
-        {
-            connectionStatusText.gameObject.SetActive(connected);
-            connectionStatusText.text = connected ? "Server connected." : "";
-        }
+        base.OnConnectedToMaster();
+        SetConnectedToMaster(true);
+        Debug.Log("Connected to Master Server");
     }
 
     public override void OnCreatedRoom()
     {
-        Debug.Log("Room created: " + PhotonNetwork.CurrentRoom.Name);
+        Debug.Log($"Room created successfully: {PhotonNetwork.CurrentRoom.Name}");
         PhotonNetwork.LoadLevel("M_LevelSelection");
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log("Joined room: " + PhotonNetwork.CurrentRoom.Name);
-        PhotonNetwork.LoadLevel("M_LevelSelection");
+        Debug.Log($"Joined room: {PhotonNetwork.CurrentRoom.Name} | PlayerCount: {PhotonNetwork.CurrentRoom.PlayerCount}");
+        
+        // Only load if not already in the level selection scene
+        if (SceneManager.GetActiveScene().name != "M_LevelSelection")
+        {
+            PhotonNetwork.LoadLevel("M_LevelSelection");
+        }
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.LogError("Failed to join room: " + message);
+        Debug.LogError($"Join Room Failed: {message} (Code: {returnCode})");
+        // TODO: Show message to player (room doesn't exist, full, etc.)
+    }
+
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        Debug.LogError($"Create Room Failed: {message} (Code: {returnCode})");
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        base.OnDisconnected(cause);
+        Debug.Log($"Disconnected: {cause}");
+        SceneManager.LoadScene("GameType");
+    }
+
+    public void SetConnectedToMaster(bool connected)
+    {
+        if (connectionStatusText != null)
+        {
+            connectionStatusText.gameObject.SetActive(connected);
+            connectionStatusText.text = connected ? "Server connected." : "";
+        }
     }
 }

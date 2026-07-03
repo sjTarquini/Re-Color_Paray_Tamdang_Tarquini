@@ -1,22 +1,19 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Photon.Pun;                    // ← ADD THIS
 
 public class LevelTransitioner : MonoBehaviour
 {
     public static LevelTransitioner Instance { get; private set; }
 
     [Header("Canvas & Animator 1: Moving TO a Level")]
-    [Tooltip("The Canvas GameObject that plays the rainbow entry sequence")]
     [SerializeField] private GameObject toLevelCanvas;
-    [Tooltip("The Animator on the ToLevel Canvas")]
     [SerializeField] private Animator toLevelAnimator;
     [SerializeField] private string toLevelStateName = "ToLevel";
 
     [Header("Canvas & Animator 2: Loading FROM a Level")]
-    [Tooltip("The Canvas GameObject that plays the rainbow exit sequence")]
     [SerializeField] private GameObject fromLevelCanvas;
-    [Tooltip("The Animator on the FromLevel Canvas")]
     [SerializeField] private Animator fromLevelAnimator;
     [SerializeField] private string fromLevelStateName = "FromLevel";
 
@@ -39,50 +36,46 @@ public class LevelTransitioner : MonoBehaviour
         if (fromLevelCanvas != null) fromLevelCanvas.SetActive(false);
     }
 
+    /// <summary>
+    /// Use this for multiplayer (called by Master Client)
+    /// </summary>
     public void TransitionToLevel(string sceneName)
     {
         StartCoroutine(TransitionSequence(sceneName));
     }
 
-    // Existing method (unchanged)
     private IEnumerator TransitionSequence(string sceneName)
     {
-        // 1. START THE 'TO LEVEL' SECTOR
+        Debug.Log($"[LevelTransitioner] Starting transition to {sceneName} | IsMaster: {PhotonNetwork.IsMasterClient}");
+
+        // Play TO LEVEL animation
         if (toLevelCanvas != null && toLevelAnimator != null)
         {
             toLevelCanvas.SetActive(true);
             toLevelAnimator.Play(toLevelStateName);
-            
-            yield return null;
-            var stateInfo = toLevelAnimator.GetCurrentAnimatorStateInfo(0);
-            yield return new WaitForSeconds(stateInfo.length);
+            yield return new WaitForSeconds(1.5f); // or wait for animation properly
         }
 
-        // 2. LOAD THE NEW SCENE
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-        while (!asyncLoad.isDone)
+        // LOAD SCENE
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
         {
-            yield return null; 
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.LoadLevel(sceneName);
+            }
+            yield break; // Non-masters wait for Photon
+        }
+        else
+        {
+            // Solo mode
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+            while (!asyncLoad.isDone) yield return null;
         }
 
-        // Clean up
         if (toLevelCanvas != null) toLevelCanvas.SetActive(false);
-
-        // 3. START THE 'FROM LEVEL' SECTOR
-        if (fromLevelCanvas != null && fromLevelAnimator != null)
-        {
-            fromLevelCanvas.SetActive(true);
-            fromLevelAnimator.Play(fromLevelStateName);
-            
-            yield return null;
-            var stateInfo = fromLevelAnimator.GetCurrentAnimatorStateInfo(0);
-            yield return new WaitForSeconds(stateInfo.length);
-            
-            fromLevelCanvas.SetActive(false);
-        }
     }
 
-    // ==================== NEW METHOD FOR DEATH BORDER ====================
+    // Keep your death/reload method (single-player friendly)
     public void ReloadCurrentLevel()
     {
         string currentSceneName = SceneManager.GetActiveScene().name;
@@ -91,7 +84,6 @@ public class LevelTransitioner : MonoBehaviour
 
     private IEnumerator ReloadCurrentLevelSequence(string sceneName)
     {
-        // Same transition logic as normal level change
         yield return StartCoroutine(TransitionSequence(sceneName));
     }
 }
