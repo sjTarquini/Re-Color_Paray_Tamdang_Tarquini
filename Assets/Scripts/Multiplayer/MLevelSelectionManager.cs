@@ -270,14 +270,14 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     HideFeedback();
     string sceneToLoad = pendingLevelScene;
-
     ClearLevelSelectionState();
 
+    PhotonNetwork.LoadLevel(sceneToLoad);
     // Use Photon to load for everyone
-    if (LevelTransitioner.Instance != null)
-        LevelTransitioner.Instance.TransitionToLevel(sceneToLoad);
-    else
-        PhotonNetwork.LoadLevel(sceneToLoad);
+    // if (LevelTransitioner.Instance != null)
+    //     LevelTransitioner.Instance.TransitionToLevel(sceneToLoad);
+    // else
+    //     PhotonNetwork.LoadLevel(sceneToLoad);
 }
 
     private void InitializeReferences()

@@ -17,7 +17,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
     private void Awake()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
-
+        
         if (connectionStatusText != null)
             connectionStatusText.gameObject.SetActive(false);
 
@@ -27,30 +27,25 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     private void Update()
     {
-        bool hasValidInput = !string.IsNullOrEmpty(userNameInputField.text) && 
-                            !string.IsNullOrEmpty(roomNameInputField.text);
+        bool hasInput = !string.IsNullOrEmpty(userNameInputField.text) && 
+                       !string.IsNullOrEmpty(roomNameInputField.text);
         
-        createRoomButton.interactable = hasValidInput;
-        joinRoomButton.interactable = hasValidInput;
+        createRoomButton.interactable = hasInput;
+        joinRoomButton.interactable = hasInput;
     }
 
     public void CreateRoom()
     {
-        if (PhotonNetwork.InRoom)
+        if (PhotonNetwork.InRoom || PhotonNetwork.NetworkClientState == ClientState.Leaving)
         {
+            Debug.Log("Waiting to leave previous room...");
             PhotonNetwork.LeaveRoom();
             return;
         }
 
         PhotonNetwork.NickName = userNameInputField.text;
 
-        RoomOptions options = new RoomOptions
-        {
-            MaxPlayers = 2,
-            IsVisible = true,
-            IsOpen = true
-        };
-
+        RoomOptions options = new RoomOptions { MaxPlayers = 2 };
         PhotonNetwork.CreateRoom(roomNameInputField.text, options);
     }
 
@@ -62,62 +57,45 @@ public class RoomManager : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinRoom(roomNameInputField.text);
     }
 
-    public void ReturnToMainMenu()
-    {
-        PhotonNetwork.Disconnect();
-        SceneManager.LoadScene("MainMenu");
-    }
-
-    // ====================== CALLBACKS ======================
-
+    // ================= CALLBACKS =================
     public override void OnConnectedToMaster()
     {
-        base.OnConnectedToMaster();
-        SetConnectedToMaster(true);
         Debug.Log("Connected to Master Server");
+        if (connectionStatusText != null)
+        {
+            connectionStatusText.gameObject.SetActive(true);
+            connectionStatusText.text = "Server connected.";
+        }
     }
 
     public override void OnCreatedRoom()
     {
-        Debug.Log($"Room created successfully: {PhotonNetwork.CurrentRoom.Name}");
+        Debug.Log("Room Created! Loading Level Selection...");
         PhotonNetwork.LoadLevel("M_LevelSelection");
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log($"Joined room: {PhotonNetwork.CurrentRoom.Name} | PlayerCount: {PhotonNetwork.CurrentRoom.PlayerCount}");
-        
-        // Only load if not already in the level selection scene
+        Debug.Log($"Joined Room! Players: {PhotonNetwork.CurrentRoom.PlayerCount} | IsMaster: {PhotonNetwork.IsMasterClient}");
+
         if (SceneManager.GetActiveScene().name != "M_LevelSelection")
         {
             PhotonNetwork.LoadLevel("M_LevelSelection");
         }
     }
 
-    public override void OnJoinRoomFailed(short returnCode, string message)
+    public override void OnLeftRoom()
     {
-        Debug.LogError($"Join Room Failed: {message} (Code: {returnCode})");
-        // TODO: Show message to player (room doesn't exist, full, etc.)
+        Debug.Log("Left room.");
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        Debug.LogError($"Create Room Failed: {message} (Code: {returnCode})");
+        Debug.LogError($"Create Room Failed: {message}");
     }
 
-    public override void OnDisconnected(DisconnectCause cause)
+    public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        base.OnDisconnected(cause);
-        Debug.Log($"Disconnected: {cause}");
-        SceneManager.LoadScene("GameType");
-    }
-
-    public void SetConnectedToMaster(bool connected)
-    {
-        if (connectionStatusText != null)
-        {
-            connectionStatusText.gameObject.SetActive(connected);
-            connectionStatusText.text = connected ? "Server connected." : "";
-        }
+        Debug.LogError($"Join Room Failed: {message}");
     }
 }

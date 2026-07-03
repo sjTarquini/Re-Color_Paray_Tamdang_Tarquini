@@ -1,9 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
 
-/// <summary>
-/// Script for connecting to the server.
-/// </summary>
 public class ServerLoad : MonoBehaviourPunCallbacks
 {
     [SerializeField] private RoomManager roomManager;
@@ -15,11 +12,11 @@ public class ServerLoad : MonoBehaviourPunCallbacks
 
     public override void OnConnectedToMaster()
     {
-        Debug.Log("Connected to server");
+        Debug.Log("Connected to Master Server");
 
         if (roomManager != null)
         {
-            roomManager.SetConnectedToMaster(true);
+            roomManager.OnConnectedToMaster();
         }
     }
 }
