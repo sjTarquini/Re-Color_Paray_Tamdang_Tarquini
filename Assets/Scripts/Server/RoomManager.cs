@@ -17,6 +17,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
+    PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "asia";
+    PhotonNetwork.ConnectUsingSettings();
+
         if (connectionStatusText != null)
             connectionStatusText.gameObject.SetActive(false);
 
@@ -40,7 +43,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         string roomName = FilterDigits(rawInput);
 
         RoomOptions options = new RoomOptions { MaxPlayers = 2 };
-        PhotonNetwork.CreateRoom(roomName, options);
+        PhotonNetwork.JoinOrCreateRoom(roomNameInputField.text.Trim(), options, TypedLobby.Default);
     }
 
     public void JoinRoom()
