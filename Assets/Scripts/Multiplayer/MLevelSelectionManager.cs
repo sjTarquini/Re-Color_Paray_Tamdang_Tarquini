@@ -120,8 +120,6 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
 
     private void Awake()
     {
-        PhotonNetwork.AutomaticallySyncScene = true;
-        
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);

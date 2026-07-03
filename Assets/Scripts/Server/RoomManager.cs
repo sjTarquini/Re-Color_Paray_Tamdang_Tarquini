@@ -17,8 +17,9 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-    PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "asia";
-    PhotonNetwork.ConnectUsingSettings();
+        PhotonNetwork.AutomaticallySyncScene = true;
+        PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "asia";
+        PhotonNetwork.ConnectUsingSettings();
 
         if (connectionStatusText != null)
             connectionStatusText.gameObject.SetActive(false);
@@ -94,14 +95,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log($"Joined Room! Players: {PhotonNetwork.CurrentRoom.PlayerCount} | IsMaster: {PhotonNetwork.IsMasterClient}");
+
         if (PhotonNetwork.IsMasterClient)
         {
-            if (SceneManager.GetActiveScene().name != "M_LevelSelection")
-            {
-                PhotonNetwork.LoadLevel("M_LevelSelection");
-            }
+            PhotonNetwork.LoadLevel("M_LevelSelection");
         }
     }
+
 
     public override void OnLeftRoom()
     {
