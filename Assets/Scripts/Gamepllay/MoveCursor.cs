@@ -42,6 +42,13 @@ public class MoveCursor : MonoBehaviour
 
         if (remoteCursorRect != null)
             remoteCursorRect.gameObject.SetActive(false);
+
+        if (photonView != null && !photonView.IsMine)
+        {
+            // Hide the remote cursor for the local player; it will be shown when the other player moves their cursor.
+            if (remoteCursorRect != null)
+                remoteCursorRect.gameObject.SetActive(false);
+        }
     }
 
     private void Update()

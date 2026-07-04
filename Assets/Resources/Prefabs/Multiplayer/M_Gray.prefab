@@ -47,9 +47,7 @@ GameObject:
   - component: {fileID: 3456469308011831149}
   - component: {fileID: 9046135687672494033}
   - component: {fileID: 3175357773622837066}
-  - component: {fileID: 7824681947861984762}
   - component: {fileID: 7716098327854403211}
-  - component: {fileID: 8153170985809353851}
   m_Layer: 0
   m_Name: M_Gray
   m_TagString: Player
@@ -330,7 +328,7 @@ MonoBehaviour:
   runSpeed: 8
   groundDrag: 4
   fallMultiplier: 2.5
-  jumpForce: 5
+  jumpForce: 7
   groundCheckRadius: 0.15
   groundLayer:
     serializedVersion: 2
@@ -358,28 +356,12 @@ MonoBehaviour:
   observableSearch: 0
   ObservedComponents:
   - {fileID: 9046135687672494033}
-  - {fileID: 7824681947861984762}
+  - {fileID: 0}
   - {fileID: 7716098327854403211}
-  - {fileID: 8153170985809353851}
+  - {fileID: 0}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!114 &7824681947861984762
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3776500846129913958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e7cb724808c322458aa4d15f5035fa9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SynchronizeVelocity: 1
-  m_SynchronizeAngularVelocity: 0
-  m_TeleportEnabled: 0
-  m_TeleportIfDistanceGreaterThan: 3
 --- !u!114 &7716098327854403211
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -410,19 +392,3 @@ MonoBehaviour:
   m_SynchronizeLayers:
   - SynchronizeType: 0
     LayerIndex: 0
---- !u!114 &8153170985809353851
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3776500846129913958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 627855c7f81362d41938ffe0b1475957, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SynchronizePosition: 1
-  m_SynchronizeRotation: 1
-  m_SynchronizeScale: 0
-  m_UseLocal: 1

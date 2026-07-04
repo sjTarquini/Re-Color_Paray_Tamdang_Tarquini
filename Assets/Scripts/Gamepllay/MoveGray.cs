@@ -1,4 +1,5 @@
 using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -47,18 +48,36 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
         if (animator == null)
             animator = GetComponent<Animator>();
 
-        jumpCount = ActiveJumpCount;
-
         if (groundCheckPoint == null)
             groundCheckPoint = transform;
 
-        // Make remote player rigidbody static but keep the script enabled so OnPhotonSerializeView still gets called
-        if (!photonView.IsMine)
+        jumpCount = ActiveJumpCount;
+
+        int role = MLevelSelectionManager.GetLocalRoleIndexFromPrefs();
+
+        // Only the player who is actually assigned Role 1 should ever try to take ownership
+        // of Grey. Requesting unconditionally (old behavior) caused whichever client's request
+        // resolved last to "win" the object, regardless of role.
+        if (role == 1 && !photonView.IsMine)
         {
-            rb.bodyType = RigidbodyType2D.Static;
+            photonView.RequestOwnership();
         }
 
-        Debug.Log($"[MoveGray] Start - PhotonView.IsMine: {photonView.IsMine}, ViewID: {photonView.ViewID}, Owner: {photonView.Owner?.NickName}");
+        ApplyOwnershipPhysicsState();
+
+        Debug.Log($"[MoveGray] Start - Role: {role}, IsMine: {photonView.IsMine}, ViewID: {photonView.ViewID}, Owner: {photonView.Owner?.NickName}");
+    }
+
+    // Non-owners get a Static rigidbody so their local physics doesn't fight the
+    // network-synced transform. This must be re-applied whenever ownership actually
+    // changes (see OnOwnershipTransfered below) - not just once in Start(), since
+    // RequestOwnership() resolves asynchronously.
+    private void ApplyOwnershipPhysicsState()
+    {
+        if (rb == null)
+            return;
+
+        rb.bodyType = photonView.IsMine ? RigidbodyType2D.Dynamic : RigidbodyType2D.Static;
     }
 
     void Update()
@@ -265,8 +284,6 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        Debug.Log($"[MoveGray] OnPhotonSerializeView called - IsWriting: {stream.IsWriting}, IsMine: {photonView.IsMine}");
-
         if (stream.IsWriting)
         {
             // Send position, velocity, and animation state to other players
@@ -275,8 +292,6 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
             stream.SendNext(isGrounded);
             stream.SendNext(horizontalInput);
             stream.SendNext(isRunning);
-            
-            Debug.Log($"[MoveGray] Writing sync data - Pos: {transform.position}, Vel: {rb.velocity}");
         }
         else
         {
@@ -295,8 +310,6 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
                 isGrounded = networkIsGrounded;
                 horizontalInput = networkHorizontalInput;
                 isRunning = networkIsRunning;
-                
-                Debug.Log($"[MoveGray] Reading sync data - Pos: {networkPosition}, Vel: {networkVelocity}");
             }
         }
     }
