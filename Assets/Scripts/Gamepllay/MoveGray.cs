@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // Handles keyboard movement/jump for Role1 (Gray character)
-public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
+public class MoveGray : MonoBehaviourPunCallbacks //, IPunObservable
 {
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
@@ -77,7 +77,7 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
         if (rb == null)
             return;
 
-        rb.bodyType = photonView.IsMine ? RigidbodyType2D.Dynamic : RigidbodyType2D.Static;
+        rb.bodyType = photonView.IsMine ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
     }
 
     void Update()
@@ -282,35 +282,35 @@ public class MoveGray : MonoBehaviourPunCallbacks, IPunObservable
         cartwheelCoroutine = null;
     }
 
-    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if (stream.IsWriting)
-        {
-            // Send position, velocity, and animation state to other players
-            stream.SendNext(transform.position);
-            stream.SendNext(rb.velocity);
-            stream.SendNext(isGrounded);
-            stream.SendNext(horizontalInput);
-            stream.SendNext(isRunning);
-        }
-        else
-        {
-            // Receive position, velocity, and animation state from network
-            Vector3 networkPosition = (Vector3)stream.ReceiveNext();
-            Vector2 networkVelocity = (Vector2)stream.ReceiveNext();
-            bool networkIsGrounded = (bool)stream.ReceiveNext();
-            float networkHorizontalInput = (float)stream.ReceiveNext();
-            bool networkIsRunning = (bool)stream.ReceiveNext();
+    // public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    // {
+    //     if (stream.IsWriting)
+    //     {
+    //         // Send position, velocity, and animation state to other players
+    //         stream.SendNext(transform.position);
+    //         stream.SendNext(rb.velocity);
+    //         stream.SendNext(isGrounded);
+    //         stream.SendNext(horizontalInput);
+    //         stream.SendNext(isRunning);
+    //     }
+    //     else
+    //     {
+    //         // Receive position, velocity, and animation state from network
+    //         Vector3 networkPosition = (Vector3)stream.ReceiveNext();
+    //         Vector2 networkVelocity = (Vector2)stream.ReceiveNext();
+    //         bool networkIsGrounded = (bool)stream.ReceiveNext();
+    //         float networkHorizontalInput = (float)stream.ReceiveNext();
+    //         bool networkIsRunning = (bool)stream.ReceiveNext();
 
-            // Update remote player
-            if (!photonView.IsMine)
-            {
-                transform.position = networkPosition;
-                rb.velocity = networkVelocity;
-                isGrounded = networkIsGrounded;
-                horizontalInput = networkHorizontalInput;
-                isRunning = networkIsRunning;
-            }
-        }
-    }
+    //         // Update remote player
+    //         if (!photonView.IsMine)
+    //         {
+    //             transform.position = networkPosition;
+    //             rb.velocity = networkVelocity;
+    //             isGrounded = networkIsGrounded;
+    //             horizontalInput = networkHorizontalInput;
+    //             isRunning = networkIsRunning;
+    //         }
+    //     }
+    // }
 }
