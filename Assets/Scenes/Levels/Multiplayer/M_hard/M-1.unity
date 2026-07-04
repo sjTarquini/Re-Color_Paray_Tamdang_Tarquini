@@ -2295,7 +2295,6 @@ GameObject:
   - component: {fileID: 1419436342}
   - component: {fileID: 1419436345}
   - component: {fileID: 1419436346}
-  - component: {fileID: 1419436347}
   m_Layer: 5
   m_Name: CustomCursor
   m_TagString: Untagged
@@ -2404,7 +2403,6 @@ MonoBehaviour:
   observableSearch: 2
   ObservedComponents:
   - {fileID: 1419436346}
-  - {fileID: 1419436347}
   sceneViewId: 2
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -2424,22 +2422,6 @@ MonoBehaviour:
   m_SynchronizeRotation: 1
   m_SynchronizeScale: 0
   m_UseLocal: 1
---- !u!114 &1419436347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1419436340}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b8c4a61274f60b4ea5fb4299cfdbf14, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowLayerWeightsInspector: 1
-  ShowParameterInspector: 1
-  m_SynchronizeParameters: []
-  m_SynchronizeLayers: []
 --- !u!1001 &1485962951
 PrefabInstance:
   m_ObjectHideFlags: 0

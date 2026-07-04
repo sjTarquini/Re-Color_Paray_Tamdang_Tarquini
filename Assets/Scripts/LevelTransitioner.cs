@@ -41,8 +41,16 @@ public class LevelTransitioner : MonoBehaviour
     /// </summary>
     public void TransitionToLevel(string sceneName)
     {
-        StartCoroutine(TransitionSequence(sceneName));
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LoadLevel(sceneName);
+        }
+        else
+        {
+            StartCoroutine(TransitionSequence(sceneName));
+        }
     }
+
 
     private IEnumerator TransitionSequence(string sceneName)
     {

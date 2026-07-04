@@ -147,11 +147,11 @@ public class MoveCursor : MonoBehaviour
             return;
 
         Vector2 normalized = new Vector2(screenPos.x / Screen.width, screenPos.y / Screen.height);
-        photonView.RPC(nameof(RpcUpdateRemoteCursor), RpcTarget.Others, normalized);
+        photonView.RPC(nameof(RpcUpdateRemoteCursor), RpcTarget.Others, normalized, isDraggingObject);
     }
 
     [PunRPC]
-    private void RpcUpdateRemoteCursor(Vector2 normalizedScreenPos)
+    private void RpcUpdateRemoteCursor(Vector2 normalizedScreenPos, bool remoteDragging)
     {
         if (remoteCursorRect == null || cursorCanvas == null)
             return;
@@ -168,7 +168,13 @@ public class MoveCursor : MonoBehaviour
 
         if (!remoteCursorRect.gameObject.activeSelf)
             remoteCursorRect.gameObject.SetActive(true);
+
+        // Update remote cursor sprite based on drag state
+        Image remoteImage = remoteCursorRect.GetComponent<Image>();
+        if (remoteImage != null)
+            remoteImage.sprite = remoteDragging ? clickHoldCursorSprite : idleCursorSprite;
     }
+
 
     private void MouseClick(Vector2 mousePos2D)
     {

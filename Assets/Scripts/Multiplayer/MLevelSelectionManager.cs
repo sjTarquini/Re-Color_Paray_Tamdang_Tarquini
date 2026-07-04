@@ -287,6 +287,9 @@ public class MLevelSelectionManager : MonoBehaviourPunCallbacks, IOnEventCallbac
         string sceneToLoad = pendingLevelScene;
         ClearLevelSelectionState();
 
+        if (LevelTransitioner.Instance != null)
+            LevelTransitioner.Instance.TransitionToLevel(sceneToLoad);
+        else
         PhotonNetwork.LoadLevel(sceneToLoad);
     }
 
